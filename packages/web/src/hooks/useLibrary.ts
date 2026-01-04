@@ -14,10 +14,11 @@ interface UseLibraryResult {
   error: string | null;
   refetch: () => Promise<void>;
   markAsRead: (bookmarkId: string, isRead?: boolean) => Promise<void>;
+  deleteBook: (bookId: string) => Promise<void>;
 }
 
 export function useLibrary(): UseLibraryResult {
-  const { bookmarks, isLoading, error, refetch, markAsRead } = useBookmarks();
+  const { bookmarks, isLoading, error, refetch, markAsRead, deleteBookmark } = useBookmarks();
 
   const { books, sections } = useMemo(() => {
     if (!bookmarks.length) return { books: [], sections: [] };
@@ -62,6 +63,20 @@ export function useLibrary(): UseLibraryResult {
     [books, sections]
   );
 
+  // Delete a book and all its bookmarks (for threads, deletes all pages)
+  const deleteBook = useCallback(
+    async (bookId: string): Promise<void> => {
+      const book = books.find(b => b.id === bookId);
+      if (!book) return;
+
+      // Delete all bookmarks in the book
+      // For threads, this deletes all tweets in the thread
+      // For single bookmarks, this just deletes the one bookmark
+      await Promise.all(book.bookmarks.map(bookmark => deleteBookmark(bookmark.id)));
+    },
+    [books, deleteBookmark]
+  );
+
   return {
     books,
     sections,
@@ -71,5 +86,6 @@ export function useLibrary(): UseLibraryResult {
     error,
     refetch,
     markAsRead,
+    deleteBook,
   };
 }

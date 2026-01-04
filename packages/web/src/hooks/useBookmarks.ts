@@ -16,6 +16,7 @@ interface UseBookmarksResult {
   error: string | null;
   refetch: () => Promise<void>;
   markAsRead: (bookmarkId: string, isRead?: boolean) => Promise<void>;
+  deleteBookmark: (bookmarkId: string) => Promise<void>;
 }
 
 export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksResult {
@@ -140,6 +141,29 @@ export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksRes
     }
   }, []);
 
+  const deleteBookmark = useCallback(async (bookmarkId: string) => {
+    try {
+      const supabase = getSupabaseClient();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error: deleteError } = await supabase
+        .from('bookmarks')
+        .delete()
+        .eq('id', bookmarkId)
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      // Update local state - remove the deleted bookmark
+      setBookmarks(prev => prev.filter(bookmark => bookmark.id !== bookmarkId));
+    } catch (err) {
+      console.error('[BookmarX] Error deleting bookmark:', err);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     fetchBookmarks();
   }, [fetchBookmarks]);
@@ -150,5 +174,6 @@ export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksRes
     error,
     refetch: fetchBookmarks,
     markAsRead,
+    deleteBookmark,
   };
 }

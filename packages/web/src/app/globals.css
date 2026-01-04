@@ -709,6 +709,48 @@ a:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
+/* Delete button */
+.book-delete-btn {
+  position: absolute;
+  top: 8px;
+  left: auto !important;
+  right: 8px !important;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  z-index: 100;
+  pointer-events: auto !important;
+  opacity: 0.6;
+  transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.book-delete-btn:hover {
+  background: #ef4444;
+  color: white;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.book-delete-btn:active {
+  background: #dc2626;
+  transform: scale(0.95);
+}
+
+/* On touch devices, make delete button more visible by default */
+@media (hover: none) {
+  .book-delete-btn {
+    opacity: 0.8;
+    background: rgba(0, 0, 0, 0.6);
+  }
+}
+
 /* Shine effect */
 .book-shine {
   position: absolute;

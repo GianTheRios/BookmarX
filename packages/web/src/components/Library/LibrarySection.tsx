@@ -8,6 +8,7 @@ import type { LibrarySection as LibrarySectionType } from '@bookmarx/shared';
 interface LibrarySectionProps {
   section: LibrarySectionType;
   onBookClick: (bookId: string) => void;
+  onBookDelete?: (bookId: string) => void;
 }
 
 // Elegant section configurations with custom icons and styling
@@ -38,7 +39,7 @@ const SECTION_CONFIG: Record<string, {
   },
 };
 
-export function LibrarySection({ section, onBookClick }: LibrarySectionProps) {
+export function LibrarySection({ section, onBookClick, onBookDelete }: LibrarySectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -151,6 +152,7 @@ export function LibrarySection({ section, onBookClick }: LibrarySectionProps) {
               <BookCard
                 book={book}
                 onClick={() => onBookClick(book.id)}
+                onDelete={onBookDelete}
               />
             </motion.div>
           ))}

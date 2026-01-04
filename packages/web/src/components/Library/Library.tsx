@@ -7,10 +7,18 @@ import { LibrarySection } from './LibrarySection';
 
 export function Library() {
   const router = useRouter();
-  const { sections, isLoading, error } = useLibrary();
+  const { sections, isLoading, error, deleteBook } = useLibrary();
 
   const handleBookClick = (bookId: string) => {
     router.push('/reader/' + encodeURIComponent(bookId));
+  };
+
+  const handleBookDelete = async (bookId: string) => {
+    try {
+      await deleteBook(bookId);
+    } catch (err) {
+      console.error('[BookmarX] Failed to delete book:', err);
+    }
   };
 
   if (isLoading) {
@@ -52,6 +60,7 @@ export function Library() {
             <LibrarySection
               section={section}
               onBookClick={handleBookClick}
+              onBookDelete={handleBookDelete}
             />
           </motion.div>
         ))}
