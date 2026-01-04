@@ -11,9 +11,10 @@ export default function BookReaderPage() {
   const params = useParams();
   const router = useRouter();
   const bookId = decodeURIComponent(params.bookId as string);
-  const { getBookById, isLoading, error, markAsRead } = useLibrary();
+  const { getBookById, getNextBook, isLoading, error, markAsRead } = useLibrary();
 
   const book = getBookById(bookId);
+  const nextBook = getNextBook(bookId);
 
   const handlePageChange = (index: number) => {
     console.log('Page changed to:', index);
@@ -29,6 +30,12 @@ export default function BookReaderPage() {
 
   const handleBack = () => {
     router.push('/reader');
+  };
+
+  const handleReadNext = () => {
+    if (nextBook) {
+      router.push('/reader/' + encodeURIComponent(nextBook.id));
+    }
   };
 
   if (isLoading) {
@@ -70,8 +77,12 @@ export default function BookReaderPage() {
       <main className="pt-20">
         <Book
           bookmarks={book.bookmarks}
+          currentBook={book}
+          nextBook={nextBook}
           onPageChange={handlePageChange}
           onMarkAsRead={handleMarkAsRead}
+          onReadNext={handleReadNext}
+          onBackToLibrary={handleBack}
         />
       </main>
     </div>

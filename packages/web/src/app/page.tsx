@@ -79,7 +79,7 @@ export default function Home() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="pt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left"
+            className="pt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left"
           >
             <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
               <span className="text-2xl mb-2 block">📖</span>
@@ -100,6 +100,13 @@ export default function Home() {
               <h3 className="font-semibold text-[var(--text-primary)] mb-1">Track Progress</h3>
               <p className="text-sm text-[var(--text-muted)]">
                 Never lose your place with read/unread tracking
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-light)]">
+              <span className="text-2xl mb-2 block">🗂️</span>
+              <h3 className="font-semibold text-[var(--text-primary)] mb-1">Smart Categories</h3>
+              <p className="text-sm text-[var(--text-muted)]">
+                Auto-organize into Threads, Articles, Quick Takes & Videos
               </p>
             </div>
           </motion.div>

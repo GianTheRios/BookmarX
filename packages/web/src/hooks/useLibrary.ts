@@ -9,6 +9,7 @@ interface UseLibraryResult {
   books: BookData[];
   sections: LibrarySection[];
   getBookById: (bookId: string) => BookData | undefined;
+  getNextBook: (currentBookId: string) => BookData | undefined;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -30,10 +31,42 @@ export function useLibrary(): UseLibraryResult {
     [books]
   );
 
+  // Get the next book in the same category
+  const getNextBook = useCallback(
+    (currentBookId: string): BookData | undefined => {
+      const currentBook = books.find(b => b.id === currentBookId);
+      if (!currentBook) return undefined;
+
+      // Find the section for this category
+      const section = sections.find(s => s.id === currentBook.category);
+      if (!section) return undefined;
+
+      // Find the index of the current book in the section
+      const currentIndex = section.books.findIndex(b => b.id === currentBookId);
+      if (currentIndex === -1) return undefined;
+
+      // Return the next book, or the first book if we're at the end
+      if (currentIndex < section.books.length - 1) {
+        return section.books[currentIndex + 1];
+      }
+
+      // If at the end of this category, try to find a book from another category
+      for (const s of sections) {
+        if (s.id !== currentBook.category && s.books.length > 0) {
+          return s.books[0];
+        }
+      }
+
+      return undefined;
+    },
+    [books, sections]
+  );
+
   return {
     books,
     sections,
     getBookById,
+    getNextBook,
     isLoading,
     error,
     refetch,

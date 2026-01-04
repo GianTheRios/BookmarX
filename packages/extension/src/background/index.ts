@@ -1,5 +1,6 @@
 import type { SyncStatus, LocalBookmark } from '@bookmarx/shared';
 import { getUser, syncBookmarksToSupabase } from '../lib/supabase';
+import { expandThreadsInBookmarks } from './threadFetcher';
 
 // Initialize sync status
 const defaultSyncStatus: SyncStatus = {
@@ -41,12 +42,12 @@ async function triggerSync() {
   }
 }
 
-async function handleScrapedBookmarks(bookmarks: LocalBookmark[]) {
-  // Set syncing status
+async function handleScrapedBookmarks(initialBookmarks: LocalBookmark[]) {
+  // Set syncing status - start with thread expansion phase
   let syncStatus: SyncStatus = {
     lastSyncedAt: null,
-    pendingCount: bookmarks.length,
-    totalCount: bookmarks.length,
+    pendingCount: initialBookmarks.length,
+    totalCount: initialBookmarks.length,
     isSyncing: true,
     error: null,
   };
@@ -54,7 +55,28 @@ async function handleScrapedBookmarks(bookmarks: LocalBookmark[]) {
   await chrome.storage.local.set({ syncStatus });
   chrome.runtime.sendMessage({ type: 'SYNC_STATUS_UPDATE', payload: syncStatus });
 
+  let bookmarks = initialBookmarks;
+
   try {
+    // Expand threads to get full thread content
+    console.log('[BookmarX] Checking for threads to expand...');
+    bookmarks = await expandThreadsInBookmarks(initialBookmarks, (current, total) => {
+      console.log(`[BookmarX] Expanding threads: ${current}/${total}`);
+    });
+
+    if (bookmarks.length > initialBookmarks.length) {
+      console.log(`[BookmarX] Expanded ${initialBookmarks.length} bookmarks to ${bookmarks.length} (including thread tweets)`);
+    }
+
+    // Update status with new count
+    syncStatus = {
+      ...syncStatus,
+      pendingCount: bookmarks.length,
+      totalCount: bookmarks.length,
+    };
+    await chrome.storage.local.set({ syncStatus });
+    chrome.runtime.sendMessage({ type: 'SYNC_STATUS_UPDATE', payload: syncStatus });
+
     // Check if user is authenticated
     const user = await getUser();
 

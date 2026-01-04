@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Literata } from "next/font/google";
+import { DM_Sans, Literata, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -11,6 +11,14 @@ const dmSans = DM_Sans({
 const literata = Literata({
   variable: "--font-literata",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -27,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${literata.variable}`}>
+      <body className={`${dmSans.variable} ${literata.variable} ${cormorant.variable}`}>
         {children}
       </body>
     </html>

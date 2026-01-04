@@ -26,71 +26,169 @@ export function Library() {
   }
 
   return (
-    <div className="py-8">
-      {sections.map((section, index) => (
-        <motion.div
-          key={section.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: index * 0.1 }}
-        >
-          <LibrarySection
-            section={section}
-            onBookClick={handleBookClick}
-          />
-        </motion.div>
-      ))}
+    <div className="library-container">
+      {/* Atmospheric header */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="library-welcome"
+      >
+        <h1 className="library-title">Your Library</h1>
+        <p className="library-subtitle">
+          {sections.reduce((acc, s) => acc + s.books.length, 0)} volumes awaiting your attention
+        </p>
+      </motion.div>
+
+      {/* Sections */}
+      <div className="library-sections">
+        {sections.map((section, index) => (
+          <motion.div
+            key={section.id}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <LibrarySection
+              section={section}
+              onBookClick={handleBookClick}
+            />
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
 
 function LoadingState() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
+    <div className="library-state">
       <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        className="w-8 h-8 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full"
-      />
-      <p className="mt-4 text-[var(--text-muted)]">Loading your library...</p>
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="library-state-content"
+      >
+        {/* Animated book stack */}
+        <div className="loading-books">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="loading-book"
+              style={{
+                background: ['#1a3a52', '#4a2c2a', '#2d4a3e'][i],
+                zIndex: 3 - i,
+              }}
+              animate={{
+                y: [0, -8, 0],
+                rotateZ: [0, -2, 0],
+              }}
+              transition={{
+                duration: 1.2,
+                repeat: Infinity,
+                delay: i * 0.15,
+                ease: 'easeInOut',
+              }}
+            />
+          ))}
+        </div>
+
+        <motion.p
+          className="library-state-text"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          Arranging your collection...
+        </motion.p>
+      </motion.div>
     </div>
   );
 }
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-        <span className="text-2xl">!</span>
-      </div>
-      <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
-        Something went wrong
-      </h2>
-      <p className="text-[var(--text-muted)] max-w-md">{message}</p>
+    <div className="library-state">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="library-state-content"
+      >
+        <div className="error-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4M12 16h.01" />
+          </svg>
+        </div>
+
+        <h2 className="library-state-title">Something went awry</h2>
+        <p className="library-state-message">{message}</p>
+
+        <button
+          onClick={() => window.location.reload()}
+          className="library-state-button"
+        >
+          Try again
+        </button>
+      </motion.div>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
+    <div className="library-state">
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="w-20 h-20 rounded-2xl bg-[var(--accent-subtle)] flex items-center justify-center mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="library-state-content"
       >
-        <span className="text-4xl">📚</span>
+        {/* Decorative empty bookshelf illustration */}
+        <motion.div
+          className="empty-shelf"
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div className="shelf-back" />
+          <div className="shelf-bottom" />
+          <div className="shelf-dust">
+            {[...Array(5)].map((_, i) => (
+              <motion.span
+                key={i}
+                animate={{
+                  opacity: [0.3, 0.6, 0.3],
+                  y: [0, -2, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.5,
+                }}
+              />
+            ))}
+          </div>
+        </motion.div>
+
+        <h2 className="library-state-title">Your shelves await</h2>
+        <p className="library-state-message">
+          Install the BookmarX extension and sync your X bookmarks to begin curating your personal library.
+        </p>
+
+        <div className="empty-actions">
+          <button className="library-state-button library-state-button--primary">
+            <ExtensionIcon />
+            Install Extension
+          </button>
+        </div>
       </motion.div>
-      <h2
-        className="text-2xl font-bold text-[var(--text-primary)] mb-2"
-        style={{ fontFamily: 'var(--font-literata), Georgia, serif' }}
-      >
-        Your library is empty
-      </h2>
-      <p className="text-[var(--text-secondary)] max-w-md mb-6">
-        Install the BookmarX extension and sync your X bookmarks to start building your library.
-      </p>
     </div>
+  );
+}
+
+function ExtensionIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
   );
 }
