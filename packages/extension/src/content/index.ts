@@ -12,7 +12,7 @@ async function handleScrape() {
   console.log('[BookmarX] Starting bookmark scrape...');
 
   try {
-    const tweets = scrapeTweets();
+    const tweets = await scrapeTweets();
     console.log(`[BookmarX] Found ${tweets.length} tweets`);
 
     // Convert scraped tweets to LocalBookmark format
@@ -45,7 +45,7 @@ async function handleScrape() {
   }
 }
 
-function categorizeBookmark(tweet: ReturnType<typeof scrapeTweets>[0]): LocalBookmark['category'] {
+function categorizeBookmark(tweet: Awaited<ReturnType<typeof scrapeTweets>>[0]): LocalBookmark['category'] {
   if (tweet.isReply) return 'thread';
   if (tweet.externalUrls.length > 0) return 'article';
   if (tweet.mediaUrls.length > 0) return 'media';

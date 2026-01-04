@@ -1,4 +1,5 @@
 import type { SyncStatus, LocalBookmark } from '@bookmarx/shared';
+import { getUser, syncBookmarksToSupabase } from '../lib/supabase';
 
 // Initialize sync status
 const defaultSyncStatus: SyncStatus = {
@@ -41,28 +42,73 @@ async function triggerSync() {
 }
 
 async function handleScrapedBookmarks(bookmarks: LocalBookmark[]) {
-  // Update sync status
-  const syncStatus: SyncStatus = {
-    lastSyncedAt: new Date().toISOString(),
-    pendingCount: bookmarks.filter(b => !b.syncStatus || b.syncStatus === 'pending').length,
+  // Set syncing status
+  let syncStatus: SyncStatus = {
+    lastSyncedAt: null,
+    pendingCount: bookmarks.length,
     totalCount: bookmarks.length,
-    isSyncing: false,
+    isSyncing: true,
     error: null,
   };
 
-  // Store bookmarks and status
-  await chrome.storage.local.set({
-    bookmarks,
-    syncStatus,
-  });
+  await chrome.storage.local.set({ syncStatus });
+  chrome.runtime.sendMessage({ type: 'SYNC_STATUS_UPDATE', payload: syncStatus });
 
-  // Notify popup
-  chrome.runtime.sendMessage({
-    type: 'SYNC_STATUS_UPDATE',
-    payload: syncStatus,
-  });
+  try {
+    // Check if user is authenticated
+    const user = await getUser();
 
-  console.log(`[BookmarX] Synced ${bookmarks.length} bookmarks`);
+    if (!user) {
+      // Store locally only - user needs to log in
+      syncStatus = {
+        lastSyncedAt: new Date().toISOString(),
+        pendingCount: bookmarks.length,
+        totalCount: bookmarks.length,
+        isSyncing: false,
+        error: 'Sign in to sync bookmarks to cloud',
+      };
+
+      await chrome.storage.local.set({ bookmarks, syncStatus });
+      chrome.runtime.sendMessage({ type: 'SYNC_STATUS_UPDATE', payload: syncStatus });
+      console.log(`[BookmarX] Stored ${bookmarks.length} bookmarks locally (not signed in)`);
+      return;
+    }
+
+    // Sync to Supabase
+    const { synced, errors } = await syncBookmarksToSupabase(bookmarks);
+
+    // Update bookmarks with synced status
+    const syncedBookmarks = bookmarks.map(b => ({
+      ...b,
+      syncStatus: errors.some(e => e.tweetId === b.tweetId) ? 'error' as const : 'synced' as const,
+    }));
+
+    syncStatus = {
+      lastSyncedAt: new Date().toISOString(),
+      pendingCount: errors.length,
+      totalCount: bookmarks.length,
+      isSyncing: false,
+      error: errors.length > 0 ? `Failed to sync ${errors.length} bookmarks` : null,
+    };
+
+    await chrome.storage.local.set({ bookmarks: syncedBookmarks, syncStatus });
+    chrome.runtime.sendMessage({ type: 'SYNC_STATUS_UPDATE', payload: syncStatus });
+    console.log(`[BookmarX] Synced ${synced} bookmarks to Supabase`);
+
+  } catch (error) {
+    console.error('[BookmarX] Sync error:', error);
+
+    syncStatus = {
+      lastSyncedAt: new Date().toISOString(),
+      pendingCount: bookmarks.length,
+      totalCount: bookmarks.length,
+      isSyncing: false,
+      error: error instanceof Error ? error.message : 'Sync failed',
+    };
+
+    await chrome.storage.local.set({ bookmarks, syncStatus });
+    chrome.runtime.sendMessage({ type: 'SYNC_STATUS_UPDATE', payload: syncStatus });
+  }
 }
 
 // Listen for tab updates to auto-scrape when on bookmarks page

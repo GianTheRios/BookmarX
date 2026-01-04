@@ -121,6 +121,31 @@ export interface Chapter {
 }
 
 // =============================================================================
+// Library Types
+// =============================================================================
+
+export interface BookData {
+  id: string;
+  title: string;
+  authorHandle: string;
+  authorName: string | null;
+  authorAvatarUrl: string | null;
+  category: BookmarkCategory;
+  bookmarks: BookmarkWithReadState[];
+  pageCount: number;
+  coverImage?: string;
+  createdAt: string;
+  isRead: boolean;
+  readProgress: number;
+}
+
+export interface LibrarySection {
+  id: BookmarkCategory;
+  title: string;
+  books: BookData[];
+}
+
+// =============================================================================
 // Constants
 // =============================================================================
 

@@ -5,7 +5,10 @@ import type { ScrapedTweet } from '@bookmarx/shared';
  * Note: X's DOM structure may change. This scraper targets the current structure
  * as of early 2025 and may need updates if X changes their frontend.
  */
-export function scrapeTweets(): ScrapedTweet[] {
+export async function scrapeTweets(): Promise<ScrapedTweet[]> {
+  // First, expand all truncated tweets
+  await expandAllTruncatedTweets();
+
   const tweets: ScrapedTweet[] = [];
   const seenIds = new Set<string>();
 
@@ -25,6 +28,41 @@ export function scrapeTweets(): ScrapedTweet[] {
   });
 
   return tweets;
+}
+
+/**
+ * Clicks all "Show more" buttons to expand truncated tweets
+ */
+async function expandAllTruncatedTweets(): Promise<void> {
+  // Find "Show more" buttons/spans within tweet text
+  const showMoreButtons = document.querySelectorAll('[data-testid="tweet-text-show-more-link"]');
+
+  // Also look for the common "Show more" text pattern
+  const allSpans = document.querySelectorAll('article[data-testid="tweet"] span');
+  const showMoreSpans: HTMLElement[] = [];
+
+  allSpans.forEach((span) => {
+    if (span.textContent?.trim() === 'Show more' && span.closest('article')) {
+      showMoreSpans.push(span as HTMLElement);
+    }
+  });
+
+  const buttonsToClick = [...Array.from(showMoreButtons), ...showMoreSpans] as HTMLElement[];
+
+  for (const button of buttonsToClick) {
+    try {
+      button.click();
+      // Small delay to let content expand
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (e) {
+      console.warn('[BookmarX] Failed to expand tweet:', e);
+    }
+  }
+
+  // Wait a bit for all content to load
+  if (buttonsToClick.length > 0) {
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
 }
 
 function parseTweetElement(article: HTMLElement): ScrapedTweet | null {
@@ -150,11 +188,40 @@ function extractMediaUrls(article: HTMLElement): string[] {
     if (src) urls.push(src);
   });
 
-  // Find video thumbnails (videos are loaded dynamically)
+  // Find video elements and extract what we can
   const videos = article.querySelectorAll('video');
   videos.forEach((video) => {
+    // Try to get video source
+    const source = video.querySelector('source');
+    if (source?.src && !source.src.startsWith('blob:')) {
+      urls.push(source.src);
+    }
+    // Fallback to poster image for video thumbnail
     const poster = video.getAttribute('poster');
     if (poster) urls.push(poster);
+  });
+
+  // Find video containers with data attributes (X sometimes stores URLs here)
+  const videoContainers = article.querySelectorAll('[data-testid="videoPlayer"]');
+  videoContainers.forEach((container) => {
+    // Look for video URL in nested elements
+    const videoComponent = container.querySelector('[data-testid="videoComponent"]');
+    if (videoComponent) {
+      // Mark this tweet as having video
+      const poster = container.querySelector('video')?.getAttribute('poster');
+      if (poster && !urls.includes(poster)) {
+        urls.push(poster);
+      }
+    }
+  });
+
+  // Find GIFs (they're often in video tags too)
+  const gifs = article.querySelectorAll('video[aria-label*="GIF"], video[aria-label*="Animated"]');
+  gifs.forEach((gif) => {
+    const poster = gif.getAttribute('poster');
+    if (poster && !urls.includes(poster)) {
+      urls.push(poster);
+    }
   });
 
   return urls;

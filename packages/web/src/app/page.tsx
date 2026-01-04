@@ -12,7 +12,15 @@ export default function Home() {
         <h1 className="text-xl font-bold text-[var(--accent-primary)]" style={{ fontFamily: 'var(--font-literata), Georgia, serif' }}>
           BookmarX
         </h1>
-        <ThemeToggle />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <Link
+            href="/login"
+            className="px-4 py-2 rounded-full text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+          >
+            Sign in
+          </Link>
+        </div>
       </header>
 
       {/* Hero */}
@@ -56,7 +64,8 @@ export default function Home() {
           >
             <Link
               href="/reader"
-              className="px-8 py-3 rounded-full text-base font-semibold bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)] transition-colors shadow-lg hover:shadow-xl"
+              className="px-8 py-3 rounded-full text-base font-semibold bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] transition-colors shadow-lg hover:shadow-xl"
+              style={{ color: '#1a1612' }}
             >
               Try Demo Reader
             </Link>
