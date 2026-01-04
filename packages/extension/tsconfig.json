@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@bookmarx/shared": ["../shared/src/index.ts"]
+    },
+    "noEmit": true
+  },
+  "include": ["src/**/*", "../shared/src/**/*"]
+}

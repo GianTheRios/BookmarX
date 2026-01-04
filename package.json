@@ -1,0 +1,24 @@
+{
+  "name": "bookmarx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Transform X bookmarks into a Kindle-style reading experience",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:extension": "npm run dev --workspace=@bookmarx/extension",
+    "dev:web": "npm run dev --workspace=@bookmarx/web",
+    "build:extension": "npm run build --workspace=@bookmarx/extension",
+    "build:web": "npm run build --workspace=@bookmarx/web",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GianTheRios/BookmarX.git"
+  },
+  "author": "",
+  "license": "MIT"
+}
