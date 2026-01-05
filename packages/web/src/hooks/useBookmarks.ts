@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import type { BookmarkWithReadState } from '@bookmarx/shared';
+import type { BookmarkWithReadState, BookmarkCategory } from '@bookmarx/shared';
 
 interface UseBookmarksOptions {
   category?: string;
@@ -17,6 +17,7 @@ interface UseBookmarksResult {
   refetch: () => Promise<void>;
   markAsRead: (bookmarkId: string, isRead?: boolean) => Promise<void>;
   deleteBookmark: (bookmarkId: string) => Promise<void>;
+  updateCategory: (bookmarkId: string, category: BookmarkCategory) => Promise<void>;
 }
 
 export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksResult {
@@ -165,6 +166,33 @@ export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksRes
     }
   }, []);
 
+  const updateCategory = useCallback(async (bookmarkId: string, category: BookmarkCategory) => {
+    try {
+      const supabase = getSupabaseClient();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error: updateError } = await supabase
+        .from('bookmarks')
+        .update({ category })
+        .eq('id', bookmarkId)
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setBookmarks(prev => prev.map(bookmark =>
+        bookmark.id === bookmarkId
+          ? { ...bookmark, category }
+          : bookmark
+      ));
+    } catch (err) {
+      console.error('[BookmarX] Error updating bookmark category:', err);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     fetchBookmarks();
   }, [fetchBookmarks]);
@@ -176,5 +204,6 @@ export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksRes
     refetch: fetchBookmarks,
     markAsRead,
     deleteBookmark,
+    updateCategory,
   };
 }

@@ -2,13 +2,14 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookCard } from './BookCard';
-import type { LibrarySection as LibrarySectionType } from '@bookmarx/shared';
+import { BookCard, type BookDragData } from './BookCard';
+import type { LibrarySection as LibrarySectionType, BookmarkCategory } from '@bookmarx/shared';
 
 interface LibrarySectionProps {
   section: LibrarySectionType;
   onBookClick: (bookId: string) => void;
   onBookDelete?: (bookId: string) => void;
+  onBookCategoryChange?: (bookId: string, newCategory: BookmarkCategory) => void;
 }
 
 // Elegant section configurations with custom icons and styling
@@ -39,11 +40,55 @@ const SECTION_CONFIG: Record<string, {
   },
 };
 
-export function LibrarySection({ section, onBookClick, onBookDelete }: LibrarySectionProps) {
+export function LibrarySection({ section, onBookClick, onBookDelete, onBookCategoryChange }: LibrarySectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const config = SECTION_CONFIG[section.id] || SECTION_CONFIG.thread;
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    // Check if the dragged item is from a different category
+    try {
+      // Note: We can't read dataTransfer during dragover due to security restrictions
+      // So we just show the drop indicator regardless
+      setIsDragOver(true);
+    } catch {
+      // Ignore errors
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only set isDragOver to false if we're leaving the section entirely
+    // (not just moving to a child element)
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json')) as BookDragData;
+
+      // Only update if dropping into a different category
+      if (data.currentCategory !== section.id && onBookCategoryChange) {
+        onBookCategoryChange(data.bookId, section.id as BookmarkCategory);
+      }
+    } catch (err) {
+      console.error('[BookmarX] Failed to handle drop:', err);
+    }
+  };
 
   // Check scroll position to show/hide arrows
   const checkScroll = () => {
@@ -78,7 +123,12 @@ export function LibrarySection({ section, onBookClick, onBookDelete }: LibrarySe
   };
 
   return (
-    <section className="library-section">
+    <section
+      className={`library-section ${isDragOver ? 'library-section--drop-target' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Section header */}
       <div className="section-header">
         <div className="section-header-left">

@@ -3,7 +3,7 @@
 import { useMemo, useCallback } from 'react';
 import { useBookmarks } from './useBookmarks';
 import { groupBookmarksIntoBooks, organizeIntoSections } from '@/lib/groupBookmarks';
-import type { BookData, LibrarySection } from '@bookmarx/shared';
+import type { BookData, LibrarySection, BookmarkCategory } from '@bookmarx/shared';
 
 interface UseLibraryResult {
   books: BookData[];
@@ -15,10 +15,11 @@ interface UseLibraryResult {
   refetch: () => Promise<void>;
   markAsRead: (bookmarkId: string, isRead?: boolean) => Promise<void>;
   deleteBook: (bookId: string) => Promise<void>;
+  updateBookCategory: (bookId: string, newCategory: BookmarkCategory) => Promise<void>;
 }
 
 export function useLibrary(): UseLibraryResult {
-  const { bookmarks, isLoading, error, refetch, markAsRead, deleteBookmark } = useBookmarks();
+  const { bookmarks, isLoading, error, refetch, markAsRead, deleteBookmark, updateCategory } = useBookmarks();
 
   const { books, sections } = useMemo(() => {
     if (!bookmarks.length) return { books: [], sections: [] };
@@ -77,6 +78,24 @@ export function useLibrary(): UseLibraryResult {
     [books, deleteBookmark]
   );
 
+  // Update a book's category (only for single-bookmark books)
+  const updateBookCategory = useCallback(
+    async (bookId: string, newCategory: BookmarkCategory): Promise<void> => {
+      const book = books.find(b => b.id === bookId);
+      if (!book) return;
+
+      // Only allow updating single-bookmark books (not threads)
+      if (book.bookmarks.length !== 1) {
+        console.warn('[BookmarX] Cannot change category of multi-bookmark books (threads)');
+        return;
+      }
+
+      // Update the single bookmark's category
+      await updateCategory(book.bookmarks[0].id, newCategory);
+    },
+    [books, updateCategory]
+  );
+
   return {
     books,
     sections,
@@ -87,5 +106,6 @@ export function useLibrary(): UseLibraryResult {
     refetch,
     markAsRead,
     deleteBook,
+    updateBookCategory,
   };
 }

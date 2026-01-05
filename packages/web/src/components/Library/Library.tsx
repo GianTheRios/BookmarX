@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useLibrary } from '@/hooks/useLibrary';
 import { LibrarySection } from './LibrarySection';
+import type { BookmarkCategory } from '@bookmarx/shared';
 
 export function Library() {
   const router = useRouter();
-  const { sections, isLoading, error, deleteBook } = useLibrary();
+  const { sections, isLoading, error, deleteBook, updateBookCategory } = useLibrary();
 
   const handleBookClick = (bookId: string) => {
     router.push('/reader/' + encodeURIComponent(bookId));
@@ -18,6 +19,14 @@ export function Library() {
       await deleteBook(bookId);
     } catch (err) {
       console.error('[BookmarX] Failed to delete book:', err);
+    }
+  };
+
+  const handleBookCategoryChange = async (bookId: string, newCategory: BookmarkCategory) => {
+    try {
+      await updateBookCategory(bookId, newCategory);
+    } catch (err) {
+      console.error('[BookmarX] Failed to update book category:', err);
     }
   };
 
@@ -61,6 +70,7 @@ export function Library() {
               section={section}
               onBookClick={handleBookClick}
               onBookDelete={handleBookDelete}
+              onBookCategoryChange={handleBookCategoryChange}
             />
           </motion.div>
         ))}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { BookData } from '@bookmarx/shared';
 
@@ -7,6 +8,13 @@ interface BookCardProps {
   book: BookData;
   onClick: () => void;
   onDelete?: (bookId: string) => void;
+}
+
+// Drag data structure for transferring book info between drag/drop
+export interface BookDragData {
+  bookId: string;
+  currentCategory: string;
+  bookmarkId: string;
 }
 
 // Rich, distinguished color palettes for each category - like cloth bindings
@@ -34,8 +42,12 @@ const CATEGORY_PALETTES: Record<string, { primary: string; secondary: string; ac
 };
 
 export function BookCard({ book, onClick, onDelete }: BookCardProps) {
+  const [isDragging, setIsDragging] = useState(false);
   const previewText = book.bookmarks[0]?.content.slice(0, 80) || '';
   const palette = CATEGORY_PALETTES[book.category] || CATEGORY_PALETTES.thread;
+
+  // Only single-bookmark books can be dragged (not threads)
+  const isDraggable = book.pageCount === 1;
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,22 +55,53 @@ export function BookCard({ book, onClick, onDelete }: BookCardProps) {
     onDelete?.(book.id);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    if (!isDraggable) {
+      e.preventDefault();
+      return;
+    }
+
+    setIsDragging(true);
+
+    // Set drag data
+    const dragData: BookDragData = {
+      bookId: book.id,
+      currentCategory: book.category,
+      bookmarkId: book.bookmarks[0].id,
+    };
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
-    <motion.div
-      onClick={onClick}
-      className="book-card-wrapper"
-      whileHover="hover"
-      whileTap="tap"
-      initial="rest"
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick();
-        }
+    <div
+      draggable={isDraggable}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      style={{
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isDraggable ? 'grab' : 'pointer',
       }}
     >
+      <motion.div
+        onClick={onClick}
+        className="book-card-wrapper"
+        whileHover="hover"
+        whileTap="tap"
+        initial="rest"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+      >
       {/* 3D Book container */}
       <motion.div
         className="book-card-3d"
@@ -216,7 +259,8 @@ export function BookCard({ book, onClick, onDelete }: BookCardProps) {
           <TrashIcon />
         </button>
       )}
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
