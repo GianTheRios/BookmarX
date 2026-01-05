@@ -96,6 +96,9 @@ function parseTweetElement(article: HTMLElement): ScrapedTweet | null {
   const isReply = checkIfReply(article);
   const replyToTweetId = isReply ? extractReplyToId(article) : null;
 
+  // Check if tweet contains video
+  const hasVideo = detectVideoContent(article);
+
   return {
     tweetId,
     authorHandle: authorInfo.handle,
@@ -107,6 +110,7 @@ function parseTweetElement(article: HTMLElement): ScrapedTweet | null {
     tweetCreatedAt,
     isReply,
     replyToTweetId,
+    hasVideo,
   };
 }
 
@@ -277,4 +281,37 @@ function extractReplyToId(article: HTMLElement): string | null {
     return match ? match[1] : null;
   }
   return null;
+}
+
+function detectVideoContent(article: HTMLElement): boolean {
+  // Check for video player container (most reliable)
+  const videoPlayer = article.querySelector('[data-testid="videoPlayer"]');
+  if (videoPlayer) return true;
+
+  // Check for actual video elements
+  const videos = article.querySelectorAll('video');
+  if (videos.length > 0) {
+    // Make sure it's not just a GIF by checking for playback controls or duration
+    for (const video of videos) {
+      // Video players typically have these attributes or nested controls
+      if (video.closest('[data-testid="videoPlayer"]')) return true;
+      // Check if video has a significant poster (not a tiny preview)
+      const poster = video.getAttribute('poster');
+      if (poster && poster.includes('ext_tw_video')) return true;
+    }
+  }
+
+  // Check for video component marker
+  const videoComponent = article.querySelector('[data-testid="videoComponent"]');
+  if (videoComponent) return true;
+
+  // Check for play button overlay (indicates playable video)
+  const playButton = article.querySelector('[data-testid="playButton"]');
+  if (playButton) return true;
+
+  // Check aria labels that indicate video content
+  const videoAriaElements = article.querySelectorAll('[aria-label*="Video"], [aria-label*="Play video"]');
+  if (videoAriaElements.length > 0) return true;
+
+  return false;
 }

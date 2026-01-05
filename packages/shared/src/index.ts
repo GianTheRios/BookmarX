@@ -20,6 +20,7 @@ export interface Bookmark {
   threadId: string | null;
   threadPosition: number;
   category: BookmarkCategory;
+  hasVideo: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -59,6 +60,7 @@ export interface ScrapedTweet {
   tweetCreatedAt: string | null;
   isReply: boolean;
   replyToTweetId: string | null;
+  hasVideo: boolean;
 }
 
 export interface SyncStatus {

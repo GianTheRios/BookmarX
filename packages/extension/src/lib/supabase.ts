@@ -96,6 +96,7 @@ interface BookmarkInsert {
   thread_id: string | null;
   thread_position: number;
   category: string;
+  has_video: boolean;
 }
 
 export async function syncBookmarksToSupabase(
@@ -127,6 +128,7 @@ export async function syncBookmarksToSupabase(
     thread_id: b.threadId,
     thread_position: b.threadPosition,
     category: b.category,
+    has_video: b.hasVideo,
   }));
 
   // Upsert bookmarks (insert or update if tweet_id already exists)

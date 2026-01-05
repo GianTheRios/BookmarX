@@ -31,6 +31,7 @@ async function handleScrape() {
       threadId: tweet.replyToTweetId,
       threadPosition: 0,
       category: categorizeBookmark(tweet),
+      hasVideo: tweet.hasVideo,
       syncStatus: 'pending',
     }));
 

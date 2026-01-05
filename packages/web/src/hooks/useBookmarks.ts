@@ -87,6 +87,7 @@ export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksRes
           threadId: bookmark.thread_id,
           threadPosition: bookmark.thread_position,
           category: bookmark.category,
+          hasVideo: bookmark.has_video || false,
           createdAt: bookmark.created_at,
           updatedAt: bookmark.updated_at,
           isRead: readingState?.is_read || false,
