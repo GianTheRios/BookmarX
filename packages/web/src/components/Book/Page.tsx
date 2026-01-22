@@ -98,9 +98,30 @@ export function Page({ bookmark, pageNumber, totalPages }: PageProps) {
       <main className="flex-1 overflow-auto">
         {/* Hide text content when video embed is shown since Twitter embed includes it */}
         {!(bookmark.hasVideo && showVideoEmbed) && (
-          <p className="reading-text text-[var(--text-primary)] whitespace-pre-wrap">
-            {bookmark.content}
-          </p>
+          <>
+            {/* Article title if present */}
+            {bookmark.isArticle && bookmark.articleTitle && (
+              <h1 
+                className="text-xl font-bold text-[var(--text-primary)] mb-4"
+                style={{ fontFamily: 'var(--font-literata), Georgia, serif' }}
+              >
+                {bookmark.articleTitle}
+              </h1>
+            )}
+            <div 
+              className="reading-text text-[var(--text-primary)] whitespace-pre-wrap"
+              style={bookmark.isArticle ? { fontFamily: 'var(--font-literata), Georgia, serif', lineHeight: 1.8 } : undefined}
+            >
+              {/* Use articleContent if available, otherwise fall back to content */}
+              {bookmark.articleContent || bookmark.content}
+            </div>
+            {/* Read time for articles */}
+            {bookmark.isArticle && bookmark.estimatedReadTime && (
+              <div className="mt-4 text-xs text-[var(--text-muted)]">
+                {bookmark.estimatedReadTime} min read
+              </div>
+            )}
+          </>
         )}
 
         {/* Media / Video */}

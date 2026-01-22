@@ -15,6 +15,37 @@ async function handleScrape() {
     const tweets = await scrapeTweets();
     console.log(`[BookmarX] Found ${tweets.length} tweets`);
 
+    // #region agent log - Capture DOM structure for debugging
+    const tweetElements = document.querySelectorAll('article[data-testid="tweet"]');
+    const domAnalysis = Array.from(tweetElements).slice(0, 5).map((article, idx) => {
+      const allLinks = article.querySelectorAll('a[href]');
+      const linkHrefs = Array.from(allLinks).map(a => a.getAttribute('href') || '').filter(h => h.length > 0);
+      const cardWrapper = article.querySelector('[data-testid="card.wrapper"]');
+      const hasCardLayoutLarge = !!article.querySelector('[data-testid="card.layoutLarge.detail"]');
+      const hasCardLayoutSmall = !!article.querySelector('[data-testid="card.layoutSmall.detail"]');
+      const cardSpans = cardWrapper ? Array.from(cardWrapper.querySelectorAll('span[dir="ltr"]')).map(s => s.textContent?.slice(0, 50)) : [];
+      const tweetTextEl = article.querySelector('[data-testid="tweetText"]');
+      const contentPreview = tweetTextEl?.textContent?.slice(0, 100) || '';
+      
+      // Look for any data-testid attributes in card
+      const cardTestIds = cardWrapper ? Array.from(cardWrapper.querySelectorAll('[data-testid]')).map(el => el.getAttribute('data-testid')) : [];
+      
+      return {
+        idx,
+        linkCount: linkHrefs.length,
+        sampleLinks: linkHrefs.slice(0, 8),
+        hasCardWrapper: !!cardWrapper,
+        hasCardLayoutLarge,
+        hasCardLayoutSmall,
+        cardTestIds,
+        cardSpans: cardSpans.slice(0, 3),
+        contentPreview,
+      };
+    });
+    // Send to background for logging
+    chrome.runtime.sendMessage({ type: 'DEBUG_DOM_ANALYSIS', payload: domAnalysis });
+    // #endregion
+
     // Convert scraped tweets to LocalBookmark format
     const bookmarks: LocalBookmark[] = tweets.map((tweet, index) => ({
       localId: `local_${tweet.tweetId}`,
@@ -33,6 +64,12 @@ async function handleScrape() {
       category: categorizeBookmark(tweet),
       hasVideo: tweet.hasVideo,
       syncStatus: 'pending',
+      // Article fields
+      isArticle: tweet.isArticle,
+      articleContent: null, // Will be fetched by articleFetcher
+      articleTitle: tweet.articleTitle,
+      estimatedReadTime: null, // Will be calculated after content fetch
+      articleFetchStatus: tweet.isArticle ? 'pending' : undefined,
     }));
 
     // Send to background script
@@ -47,9 +84,16 @@ async function handleScrape() {
 }
 
 function categorizeBookmark(tweet: Awaited<ReturnType<typeof scrapeTweets>>[0]): LocalBookmark['category'] {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/749c0c6c-5c1d-4ec4-a8e0-a7c76aa5dbae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.ts:categorizeBookmark',message:'categorizing',data:{tweetId:tweet.tweetId,isArticle:tweet.isArticle,isReply:tweet.isReply,mediaCount:tweet.mediaUrls.length,externalCount:tweet.externalUrls.length,contentLength:tweet.content.length,articleTitle:tweet.articleTitle},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+  // #endregion
+  // X Articles (long-form content) get categorized as articles
+  if (tweet.isArticle) return 'article';
+  // Thread replies
   if (tweet.isReply) return 'thread';
-  if (tweet.externalUrls.length > 0) return 'article';
+  // Media-heavy content
   if (tweet.mediaUrls.length > 0) return 'media';
+  // Everything else (including tweets with external links) is a quick take
   return 'quick_take';
 }
 

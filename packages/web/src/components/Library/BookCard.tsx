@@ -43,6 +43,7 @@ const CATEGORY_PALETTES: Record<string, { primary: string; secondary: string; ac
 
 export function BookCard({ book, onClick, onDelete }: BookCardProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null);
   const previewText = book.bookmarks[0]?.content.slice(0, 80) || '';
   const palette = CATEGORY_PALETTES[book.category] || CATEGORY_PALETTES.thread;
 
@@ -55,6 +56,27 @@ export function BookCard({ book, onClick, onDelete }: BookCardProps) {
     onDelete?.(book.id);
   };
 
+  // Track mouse down position to differentiate clicks from drags
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setMouseDownPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // If we had a mousedown position, check if this was a drag attempt
+    if (mouseDownPos) {
+      const distance = Math.sqrt(
+        Math.pow(e.clientX - mouseDownPos.x, 2) + Math.pow(e.clientY - mouseDownPos.y, 2)
+      );
+      // Only trigger click if mouse didn't move much (not a drag)
+      if (distance < 5) {
+        onClick();
+      }
+      setMouseDownPos(null);
+    } else {
+      onClick();
+    }
+  };
+
   const handleDragStart = (e: React.DragEvent) => {
     if (!isDraggable) {
       e.preventDefault();
@@ -62,6 +84,7 @@ export function BookCard({ book, onClick, onDelete }: BookCardProps) {
     }
 
     setIsDragging(true);
+    setMouseDownPos(null); // Clear mousedown so click doesn't fire after drag
 
     // Set drag data
     const dragData: BookDragData = {
@@ -82,13 +105,14 @@ export function BookCard({ book, onClick, onDelete }: BookCardProps) {
       draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onMouseDown={handleMouseDown}
       style={{
         opacity: isDragging ? 0.5 : 1,
         cursor: isDraggable ? 'grab' : 'pointer',
       }}
     >
       <motion.div
-        onClick={onClick}
+        onClick={handleClick}
         className="book-card-wrapper"
         whileHover="hover"
         whileTap="tap"
@@ -98,7 +122,7 @@ export function BookCard({ book, onClick, onDelete }: BookCardProps) {
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            onClick();
+            onClick(); // Keyboard navigation bypasses drag detection
           }
         }}
       >

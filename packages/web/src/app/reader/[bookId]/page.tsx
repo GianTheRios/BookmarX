@@ -71,6 +71,8 @@ export default function BookReaderPage() {
     );
   }
 
+  // Use Book component for everything - it handles both tweets/threads and articles
+  // Articles will be displayed as pages with the full content split across pages
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <Header onBack={handleBack} authorHandle={book.authorHandle} />

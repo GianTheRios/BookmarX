@@ -93,6 +93,11 @@ export function useBookmarks(options: UseBookmarksOptions = {}): UseBookmarksRes
           updatedAt: bookmark.updated_at,
           isRead: readingState?.is_read || false,
           readAt: readingState?.read_at || null,
+          // Article fields
+          isArticle: bookmark.is_article || false,
+          articleContent: bookmark.article_content || null,
+          articleTitle: bookmark.article_title || null,
+          estimatedReadTime: bookmark.estimated_read_time || null,
         };
       });
 

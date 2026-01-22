@@ -7,10 +7,11 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 let supabaseClient: SupabaseClient | null = null;
 
-export function getSupabase(): SupabaseClient {
+export function getSupabase(): SupabaseClient | null {
   if (!supabaseClient) {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      throw new Error('Supabase credentials not configured');
+      // Return null instead of throwing for testing without credentials
+      return null;
     }
 
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -43,16 +44,25 @@ export function getSupabase(): SupabaseClient {
 
 export async function signInWithEmail(email: string, password: string) {
   const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase credentials not configured');
+  }
   return supabase.auth.signInWithPassword({ email, password });
 }
 
 export async function signUpWithEmail(email: string, password: string) {
   const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase credentials not configured');
+  }
   return supabase.auth.signUp({ email, password });
 }
 
 export async function signInWithMagicLink(email: string) {
   const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase credentials not configured');
+  }
   return supabase.auth.signInWithOtp({
     email,
     options: {
@@ -63,17 +73,26 @@ export async function signInWithMagicLink(email: string) {
 
 export async function signOut() {
   const supabase = getSupabase();
+  if (!supabase) {
+    return { error: null };
+  }
   return supabase.auth.signOut();
 }
 
 export async function getUser(): Promise<User | null> {
   const supabase = getSupabase();
+  if (!supabase) {
+    return null;
+  }
   const { data: { user } } = await supabase.auth.getUser();
   return user;
 }
 
 export async function getSession() {
   const supabase = getSupabase();
+  if (!supabase) {
+    return { data: { session: null }, error: null };
+  }
   return supabase.auth.getSession();
 }
 
@@ -97,12 +116,20 @@ interface BookmarkInsert {
   thread_position: number;
   category: string;
   has_video: boolean;
+  // Article fields
+  is_article: boolean;
+  article_content: string | null;
+  article_title: string | null;
+  estimated_read_time: number | null;
 }
 
 export async function syncBookmarksToSupabase(
   bookmarks: LocalBookmark[]
 ): Promise<{ synced: number; errors: { tweetId: string; error: string }[] }> {
   const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase credentials not configured');
+  }
   const user = await getUser();
 
   if (!user) {
@@ -129,6 +156,11 @@ export async function syncBookmarksToSupabase(
     thread_position: b.threadPosition,
     category: b.category,
     has_video: b.hasVideo,
+    // Article fields
+    is_article: b.isArticle,
+    article_content: b.articleContent,
+    article_title: b.articleTitle,
+    estimated_read_time: b.estimatedReadTime,
   }));
 
   // Upsert bookmarks (insert or update if tweet_id already exists)
@@ -159,6 +191,9 @@ export async function fetchBookmarksFromSupabase(options?: {
   offset?: number;
 }) {
   const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase credentials not configured');
+  }
   const user = await getUser();
 
   if (!user) {
@@ -182,6 +217,9 @@ export async function fetchBookmarksFromSupabase(options?: {
 
 export async function markBookmarkAsRead(bookmarkId: string, isRead: boolean) {
   const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase credentials not configured');
+  }
   const user = await getUser();
 
   if (!user) {

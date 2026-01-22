@@ -23,6 +23,11 @@ export interface Bookmark {
   hasVideo: boolean;
   createdAt: string;
   updatedAt: string;
+  // Article-specific fields
+  isArticle: boolean;
+  articleContent: string | null;
+  articleTitle: string | null;
+  estimatedReadTime: number | null;
 }
 
 export interface ReadingState {
@@ -61,6 +66,9 @@ export interface ScrapedTweet {
   isReply: boolean;
   replyToTweetId: string | null;
   hasVideo: boolean;
+  // X Article detection
+  isArticle: boolean;
+  articleTitle: string | null;
 }
 
 export interface SyncStatus {
@@ -75,6 +83,8 @@ export interface LocalBookmark extends Omit<Bookmark, 'id' | 'userId' | 'created
   localId: string;
   syncStatus: 'pending' | 'synced' | 'error';
   syncError?: string;
+  // For articles pending content fetch
+  articleFetchStatus?: 'pending' | 'fetched' | 'error';
 }
 
 // =============================================================================
